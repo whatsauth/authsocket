@@ -42,19 +42,24 @@ func RunHub() {
 			delete(Clients, connection)
 
 			log.Println("connection unregistered")
+			log.Println(connection)
 		}
 	}
 }
 
 func RunSocket(c *websocket.Conn) (Id string) {
 	var s Client
+	// When the function returns, unregister the client and close the connection
+	defer func() {
+		Unregister <- s.Id
+		c.Close()
+	}()
 	messageType, message, err := c.ReadMessage()
 	if err != nil {
 		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 			log.Println("read error:", err)
 		}
-		Unregister <- s.Id
-		c.Close()
+		return // Calls the deferred function, i.e. closes the connection on error
 	}
 	Id = string(message)
 	if messageType == websocket.TextMessage {
@@ -65,6 +70,22 @@ func RunSocket(c *websocket.Conn) (Id string) {
 			Conn: c,
 		}
 		Register <- s
+		for {
+			messageType, message, err := c.ReadMessage()
+			if err != nil {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					log.Println("read error:", err)
+				}
+				return // Calls the deferred function, i.e. closes the connection on error
+			}
+
+			if messageType == websocket.TextMessage {
+				// log the received message
+				log.Println(string(message))
+			} else {
+				log.Println("websocket message received of type", messageType)
+			}
+		}
 	} else {
 		log.Println("websocket message received of type", messageType)
 	}
