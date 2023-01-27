@@ -1,6 +1,12 @@
 # websocket
 websocket backend for whatsauth
 
+in main before fiber declaration:
+go wasocket.RunHub()
+
+
+use in controller :
+wasocket.RunSocket(c)
 
 ## Publish
 GOPROXY=proxy.golang.org
