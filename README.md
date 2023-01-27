@@ -6,7 +6,7 @@ go wasocket.RunHub()
 
 
 use in controller :
-wasocket.RunSocket(c)
+a:=wasocket.RunSocket(c)
 
 ## Publish
 GOPROXY=proxy.golang.org
