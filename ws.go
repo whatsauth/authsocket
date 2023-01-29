@@ -89,6 +89,6 @@ func RunSocket(c *websocket.Conn) (Id string) {
 	} else {
 		log.Println("websocket message received of type", messageType)
 	}
-	return
+	return Id
 
 }
