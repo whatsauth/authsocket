@@ -84,7 +84,7 @@ func ReadMessageDaemon(s Client) { //read message in Client socket
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Println("read error:", err)
 			}
-			log.Println("ReadMessageDaemon turn down the channel")
+			log.Println("ReadMessageDaemon turn down the channel", err)
 			return // Calls the deferred function, i.e. closes the connection on error
 		}
 
