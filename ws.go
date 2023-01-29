@@ -65,7 +65,7 @@ func RunSocket(c *websocket.Conn) (Id string) { // call this function after decl
 			Conn: c,
 		}
 		Register <- s
-		ReadMessageDaemon()
+		ReadMessageDaemon(s)
 	} else {
 		log.Println("websocket message received of type", messageType)
 	}
