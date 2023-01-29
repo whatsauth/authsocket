@@ -70,25 +70,34 @@ func RunSocket(c *websocket.Conn) (Id string) {
 			Conn: c,
 		}
 		Register <- s
-		for {
-			messageType, message, err := c.ReadMessage()
-			if err != nil {
-				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					log.Println("read error:", err)
-				}
-				return // Calls the deferred function, i.e. closes the connection on error
-			}
-
-			if messageType == websocket.TextMessage {
-				// log the received message
-				log.Println(string(message))
-			} else {
-				log.Println("websocket message received of type", messageType)
-			}
-		}
+		go ReadMessageDaemon(s)
 	} else {
 		log.Println("websocket message received of type", messageType)
 	}
-	return Id
+	return
+
+}
+
+func ReadMessageDaemon(s Client) {
+	defer func() {
+		Unregister <- s.Id
+		s.Conn.Close()
+	}()
+	for {
+		messageType, message, err := s.Conn.ReadMessage()
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Println("read error:", err)
+			}
+			return // Calls the deferred function, i.e. closes the connection on error
+		}
+
+		if messageType == websocket.TextMessage {
+			// log the received message
+			log.Println(string(message))
+		} else {
+			log.Println("websocket message received of type", messageType)
+		}
+	}
 
 }
