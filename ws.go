@@ -65,23 +65,7 @@ func RunSocket(c *websocket.Conn) (Id string) { // call this function after decl
 			Conn: c,
 		}
 		Register <- s
-		for {
-			messageType, message, err := s.Conn.ReadMessage()
-			if err != nil {
-				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-					log.Println("read error:", err)
-				}
-				log.Println("ReadMessageDaemon turn down the channel", err)
-				return // Calls the deferred function, i.e. closes the connection on error
-			}
-
-			if messageType == websocket.TextMessage {
-				// log the received message
-				log.Println(string(message))
-			} else {
-				log.Println("websocket message received of type", messageType)
-			}
-		}
+		ReadMessageDaemon()
 	} else {
 		log.Println("websocket message received of type", messageType)
 	}
@@ -90,10 +74,6 @@ func RunSocket(c *websocket.Conn) (Id string) { // call this function after decl
 }
 
 func ReadMessageDaemon(s Client) { //read message in Client socket
-	defer func() {
-		Unregister <- s.Id
-		s.Conn.Close()
-	}()
 	for {
 		messageType, message, err := s.Conn.ReadMessage()
 		if err != nil {
@@ -101,7 +81,9 @@ func ReadMessageDaemon(s Client) { //read message in Client socket
 				log.Println("read error:", err)
 			}
 			log.Println("ReadMessageDaemon turn down the channel", err)
-			return // Calls the deferred function, i.e. closes the connection on error
+			Unregister <- s.Id
+			s.Conn.Close()
+			return
 		}
 
 		if messageType == websocket.TextMessage {
