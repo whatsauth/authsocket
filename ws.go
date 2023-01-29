@@ -49,17 +49,12 @@ func RunHub() { // Call this function on your main function before run fiber
 
 func RunSocket(c *websocket.Conn) (Id string) { // call this function after declare URL routes
 	var s Client
-	// When the function returns, unregister the client and close the connection
-	defer func() {
-		Unregister <- s.Id
-		c.Close()
-	}()
 	messageType, message, err := c.ReadMessage()
 	if err != nil {
 		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 			log.Println("read error:", err)
 		}
-		return // Calls the deferred function, i.e. closes the connection on error
+		return
 	}
 	Id = string(message)
 	if messageType == websocket.TextMessage {
