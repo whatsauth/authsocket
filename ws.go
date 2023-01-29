@@ -9,19 +9,19 @@ import (
 type Client struct {
 	Id   string
 	Conn *websocket.Conn
-} // Add more data to this type if needed
+} // Register Conn socket with ID
 
 type Message struct {
 	Id      string
 	Message string
-} // Add more data to this type if needed
+} // To send message to Id
 
 var Clients = make(map[string]*websocket.Conn) // Note: although large maps with pointer-like types (e.g. strings) as keys are slow, using pointers themselves as keys is acceptable and fast
-var Register = make(chan Client)
+var Register = make(chan Client)               // Register channel for Client Struct
 var SendMesssage = make(chan Message)
 var Unregister = make(chan string)
 
-func RunHub() {
+func RunHub() { // Call this function on your main function before run fiber
 	for {
 		select {
 		case connection := <-Register:
@@ -47,7 +47,7 @@ func RunHub() {
 	}
 }
 
-func RunSocket(c *websocket.Conn) (Id string) {
+func RunSocket(c *websocket.Conn) (Id string) { // call this function after declare URL routes
 	var s Client
 	// When the function returns, unregister the client and close the connection
 	defer func() {
@@ -78,7 +78,7 @@ func RunSocket(c *websocket.Conn) (Id string) {
 
 }
 
-func ReadMessageDaemon(s Client) {
+func ReadMessageDaemon(s Client) { //read message in Client socket
 	defer func() {
 		Unregister <- s.Id
 		s.Conn.Close()
