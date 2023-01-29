@@ -49,12 +49,17 @@ func RunHub() { // Call this function on your main function before run fiber
 
 func RunSocket(c *websocket.Conn) (Id string) { // call this function after declare URL routes
 	var s Client
+	// When the function returns, unregister the client and close the connection
+	defer func() {
+		Unregister <- s.Id
+		c.Close()
+	}()
 	messageType, message, err := c.ReadMessage()
 	if err != nil {
 		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 			log.Println("read error:", err)
 		}
-		return
+		return // Calls the deferred function, i.e. closes the connection on error
 	}
 	Id = string(message)
 	if messageType == websocket.TextMessage {
@@ -65,33 +70,25 @@ func RunSocket(c *websocket.Conn) (Id string) { // call this function after decl
 			Conn: c,
 		}
 		Register <- s
-		go ReadMessageDaemon(s)
+		for {
+			messageType, message, err := s.Conn.ReadMessage()
+			if err != nil {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					log.Println("read error:", err)
+				}
+				return // Calls the deferred function, i.e. closes the connection on error
+			}
+
+			if messageType == websocket.TextMessage {
+				// log the received message
+				log.Println(string(message))
+			} else {
+				log.Println("websocket message received of type", messageType)
+			}
+		}
 	} else {
 		log.Println("websocket message received of type", messageType)
 	}
 	return
-
-}
-
-func ReadMessageDaemon(s Client) { //read message in Client socket
-	for {
-		messageType, message, err := s.Conn.ReadMessage()
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Println("read error:", err)
-			}
-			log.Println("ReadMessageDaemon turn down the channel", err)
-			Unregister <- s.Id
-			s.Conn.Close()
-			return
-		}
-
-		if messageType == websocket.TextMessage {
-			// log the received message
-			log.Println(string(message))
-		} else {
-			log.Println("websocket message received of type", messageType)
-		}
-	}
 
 }
